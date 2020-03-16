@@ -1,12 +1,11 @@
 package br.com.gft.projetoApi.resource;
 
 import java.util.List;
-import java.util.Optional;
 
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,9 +17,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import br.com.gft.projetoApi.event.RecursoCriadoEvent;
 import br.com.gft.projetoApi.model.Pessoa;
 import br.com.gft.projetoApi.repository.PessoaRepository;
+import br.com.gft.projetoApi.service.PessoaService;
 
 @RestController
 @RequestMapping("/pessoa")
@@ -30,52 +29,49 @@ public class PessoaResource {
 	private PessoaRepository pessoaRepository;
 	
 	@Autowired
-	private ApplicationEventPublisher publisher;
+	private PessoaService pessoaService;
 	
 	@GetMapping
 	public ResponseEntity<List<Pessoa>> listar() {
-		List<Pessoa> pessoa = pessoaRepository.findAll();
+		List<Pessoa> pessoa = pessoaService.listar();
 		return ResponseEntity.status(HttpStatus.OK).body(pessoa);
 	}
 
 	@PostMapping
 	public ResponseEntity<Pessoa> salvar(@RequestBody Pessoa pessoa, HttpServletResponse response) {
-		Pessoa pessoaSalva = pessoaRepository.save(pessoa);
-
-		publisher.publishEvent(new RecursoCriadoEvent(this, response, pessoaSalva.getId()));
-
+		
+		Pessoa pessoaSalva = pessoaService.salvar(pessoa, response);
 		return ResponseEntity.status(HttpStatus.CREATED).body(pessoaSalva);
 	}
 
 	@PutMapping("/{id}")
-	public ResponseEntity<Void> atualizar(@RequestBody Pessoa pessoa, @PathVariable("id") Long id) {
+	public ResponseEntity<Pessoa> atualizar(@Valid @RequestBody Pessoa pessoa, @PathVariable("id") Long id) {
 
-		Pessoa pessoaAtulizar = pessoaRepository.findById(id).get();
-		pessoaAtulizar.setNome(pessoa.getNome());
-		pessoaRepository.save(pessoaAtulizar);
-
-		return ResponseEntity.noContent().build();
+		Pessoa pessoaAtulizar = pessoaService.atulizar(id, pessoa);
+		return ResponseEntity.status(HttpStatus.OK).body(pessoaAtulizar);
 
 	}
+	
+	@PutMapping("/{id}/ativo")
+	public ResponseEntity<Pessoa> atualizarAtivo(@PathVariable Long id, @RequestBody Boolean ativo) {
+		
+		Pessoa pessoa = pessoaService.atulizarAtivo(id, ativo);
+		return ResponseEntity.status(HttpStatus.OK).body(pessoa);
+	}
+	
 
 	@GetMapping("/{id}")
 	public ResponseEntity<Pessoa> buscar(@PathVariable("id") Long id) {
-
-		Optional<Pessoa> pessoa = pessoaRepository.findById(id);
-
-		if (pessoa.isPresent()) {
-			return ResponseEntity.ok().body(pessoa.get());	
-		} else {
-			return ResponseEntity.noContent().build();
-		}
+		
+		Pessoa pessoa = pessoaService.buscar(id);
+		return ResponseEntity.status(HttpStatus.OK).body(pessoa);
+		
 	}
 	
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> delete(@PathVariable Long id){
 		
-		Pessoa pessoa = pessoaRepository.getOne(id);
-		
-		pessoaRepository.delete(pessoa);
+		pessoaRepository.deleteById(id);
 		
 		return ResponseEntity.noContent().build();
 	}
