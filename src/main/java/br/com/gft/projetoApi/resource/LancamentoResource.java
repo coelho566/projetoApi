@@ -6,18 +6,15 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
+import br.com.gft.projetoApi.repository.filter.LancamentoFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import br.com.gft.projetoApi.exception.HandlerException.Erro;
 import br.com.gft.projetoApi.exception.PessoaInexistenteOuInativaException;
@@ -35,9 +32,9 @@ public class LancamentoResource {
 	private MessageSource messageSource;
 	
 	@GetMapping
-	public ResponseEntity<List<Lancamento>> listar(){
+	public ResponseEntity<Page<Lancamento>> pesquisar(LancamentoFilter lancamentoFilter, Pageable pageable){
 		
-		List<Lancamento> lacamento = lancamentoService.listar();
+		Page<Lancamento> lacamento = lancamentoService.listar(lancamentoFilter, pageable);
 		return ResponseEntity.status(HttpStatus.OK).body(lacamento);
 	}
 	
@@ -53,6 +50,12 @@ public class LancamentoResource {
 		
 		Lancamento lancamentoSalva = lancamentoService.salvar(lancamento, response);
 		return ResponseEntity.status(HttpStatus.CREATED).body(lancamentoSalva);
+	}
+
+	@DeleteMapping("/{id}")
+	public ResponseEntity<Void> delete(@PathVariable("id") Long id){
+		lancamentoService.delete(id);
+		return ResponseEntity.noContent().build();
 	}
 	
 	@ExceptionHandler

@@ -5,9 +5,12 @@ import java.util.Optional;
 
 import javax.servlet.http.HttpServletResponse;
 
+import br.com.gft.projetoApi.repository.filter.LancamentoFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import br.com.gft.projetoApi.event.RecursoCriadoEvent;
@@ -16,6 +19,7 @@ import br.com.gft.projetoApi.model.Lancamento;
 import br.com.gft.projetoApi.model.Pessoa;
 import br.com.gft.projetoApi.repository.LancamentoRepository;
 import br.com.gft.projetoApi.repository.PessoaRepository;
+
 
 @Service
 public class LancamentoService {
@@ -29,9 +33,8 @@ public class LancamentoService {
 	@Autowired
 	private ApplicationEventPublisher publisher;
 	
-	public List<Lancamento> listar(){
-		
-		List<Lancamento> lancamento = repository.findAll();
+	public Page<Lancamento> listar(LancamentoFilter filter, Pageable pageable){
+		Page<Lancamento> lancamento = repository.filtrar(filter, pageable);
 		return lancamento;
 		
 	}
@@ -60,6 +63,14 @@ public class LancamentoService {
 		Lancamento lacamento = repository.save(lancamento);
 		publisher.publishEvent(new RecursoCriadoEvent(this, response, lacamento.getId()));
 		return lacamento;
+	}
+
+	public void delete (Long id){
+		try{
+			repository.deleteById(id);
+		}catch (Exception e){
+			throw new EmptyResultDataAccessException(1);
+		}
 	}
 	
 }
